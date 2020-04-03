@@ -1,6 +1,7 @@
 package dev.itsu.pvpcore;
 
 import cn.nukkit.plugin.PluginBase;
+import dev.itsu.pvpcore.game.EventListener;
 
 public class Main extends PluginBase {
 
@@ -9,6 +10,7 @@ public class Main extends PluginBase {
     @Override
     public void onEnable() {
         instance = this;
+        getServer().getPluginManager().registerEvents(new EventListener(), this);
         getLogger().info("Enabled.");
     }
 

@@ -1,7 +1,6 @@
 package dev.itsu.pvpcore.api;
 
 import dev.itsu.pvpcore.exception.InvalidPlayersCountException;
-import dev.itsu.pvpcore.exception.PlayerAlreadyEntryException;
 import dev.itsu.pvpcore.exception.RoomNotFoundException;
 import dev.itsu.pvpcore.game.GameManager;
 import dev.itsu.pvpcore.game.GameState;
@@ -23,7 +22,10 @@ public class PVPCoreAPI {
         MatchRoom room = rooms.get(id);
         if (room == null) throw new RoomNotFoundException();
 
-        if (isEntrying(playerName)) throw new PlayerAlreadyEntryException(getEntryingRoom(playerName));
+        // すでにエントリーしている場合は退出する
+        if (isEntrying(playerName)) cancelEntry(getEntryingRoom(playerName).getId(), playerName);
+
+        // このルームの所有者でない場合には、参加する人が所有しているルームを削除
         if (!room.getOwner().equals(playerName)) {
             MatchRoom r = getRoomByOwner(playerName);
             if (r != null) removeRoom(r.getId());
@@ -32,16 +34,20 @@ public class PVPCoreAPI {
         room.getJoiners().add(playerName);
         entrying.put(playerName, id);
 
-        if (room.getJoiners().size() == room.getMaxCount()) {
-            startGame(id);
-        }
+        // 最大人数に到達したらPVP開始
+        if (room.getJoiners().size() == room.getMaxCount()) startGame(id);
     }
 
     public void cancelEntry(int id, String playerName) {
         MatchRoom room = rooms.get(id);
         if (room == null) throw new RoomNotFoundException();
+
+        // 自分のルームからは退出不可
         if (room.getOwner().equals(playerName)) throw new IllegalStateException("Room owner cannot leave their own room.");
+
+        // エントリーしている人をキャンセル
         room.getJoiners().remove(playerName);
+
         entrying.remove(playerName);
     }
 
@@ -54,7 +60,14 @@ public class PVPCoreAPI {
     }
 
     public int createRoom(String owner, String name, String description, int maxCount, int minCount, boolean privateRoom, int arenaId) {
-        if (minCount < 2 || minCount > maxCount) throw new InvalidPlayersCountException();
+        if (minCount < 2 || maxCount < 2 || minCount > maxCount) throw new InvalidPlayersCountException();
+
+        // すでに所有しているルームは削除する
+        MatchRoom r = getRoomByOwner(owner);
+        if (r != null) removeRoom(r.getId());
+
+        // 他のルームにエントリーしている場合は退出する
+        if (isEntrying(owner)) cancelEntry(getEntryingRoom(owner).getId(), owner);
 
         MatchRoom room = new MatchRoom(
                 name,
@@ -71,12 +84,16 @@ public class PVPCoreAPI {
         );
 
         rooms.put(room.getId(), room);
+
+        // 自分のルームにエントリーする
         entry(room.getId(), owner);
 
         return room.getId();
     }
 
     public void removeRoom(int id) {
+        MatchRoom room = getRoomById(id);
+        room.getJoiners().forEach(name -> cancelEntry(room.getId(), name));
         rooms.remove(id);
     }
 
@@ -84,23 +101,12 @@ public class PVPCoreAPI {
         MatchRoom room = rooms.get(id);
         if (room == null) throw new RoomNotFoundException();
 
-        if (room.getJoiners().size() > room.getMinCount()) return true;
+        if (room.getJoiners().size() >= room.getMinCount()) return true;
         return false;
     }
 
     public void startGame(int id) {
-        MatchRoom room = getRoomById(id);
-
-        // 参加者が開いているルームは消去
-        rooms.forEach((i, r) -> {
-            room.getJoiners().forEach(name -> {
-                if (r.getOwner().equals(name)) {
-                    removeRoom(i);
-                }
-            });
-        });
-
-        new GameManager(room).start();
+        new GameManager(getRoomById(id)).start();
     }
 
     public MatchRoom getRoomById(int id) {
@@ -111,7 +117,7 @@ public class PVPCoreAPI {
         return rooms.values().stream()
                 .filter(it -> it.getOwner().equals(playerName))
                 .findFirst()
-                .orElse(null);
+                .orElse(null); // 見つからなければnullを返す
     }
 
     public List<MatchRoom> getRooms() {
