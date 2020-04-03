@@ -24,6 +24,10 @@ public class PVPCoreAPI {
         if (room == null) throw new RoomNotFoundException();
 
         if (isEntrying(playerName)) throw new PlayerAlreadyEntryException(getEntryingRoom(playerName));
+        if (!room.getOwner().equals(playerName)) {
+            MatchRoom r = getRoomByOwner(playerName);
+            if (r != null) removeRoom(r.getId());
+        }
 
         room.getJoiners().add(playerName);
         entrying.put(playerName, id);
@@ -36,6 +40,7 @@ public class PVPCoreAPI {
     public void cancelEntry(int id, String playerName) {
         MatchRoom room = rooms.get(id);
         if (room == null) throw new RoomNotFoundException();
+        if (room.getOwner().equals(playerName)) throw new IllegalStateException("Room owner cannot leave their own room.");
         room.getJoiners().remove(playerName);
         entrying.remove(playerName);
     }
@@ -66,6 +71,8 @@ public class PVPCoreAPI {
         );
 
         rooms.put(room.getId(), room);
+        entry(room.getId(), owner);
+
         return room.getId();
     }
 
@@ -98,6 +105,13 @@ public class PVPCoreAPI {
 
     public MatchRoom getRoomById(int id) {
         return rooms.get(id);
+    }
+
+    public MatchRoom getRoomByOwner(String playerName) {
+        return rooms.values().stream()
+                .filter(it -> it.getOwner().equals(playerName))
+                .findFirst()
+                .orElse(null);
     }
 
     public List<MatchRoom> getRooms() {
