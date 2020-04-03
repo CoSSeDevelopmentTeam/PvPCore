@@ -1,0 +1,6 @@
+main: dev.itsu.pvpcore.Main
+name: PVPCore
+version: 1.0.0
+api: ["1.0.0"]
+author: itsu
+description: The main system of PVP.

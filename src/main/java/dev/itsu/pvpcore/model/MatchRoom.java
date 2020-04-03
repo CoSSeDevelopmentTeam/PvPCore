@@ -1,5 +1,7 @@
 package dev.itsu.pvpcore.model;
 
+import dev.itsu.pvpcore.game.GameState;
+
 import java.util.List;
 
 public class MatchRoom {
@@ -14,6 +16,7 @@ public class MatchRoom {
     private int minCount;
     private long createdAt;
     private List<String> joiners;
+    private GameState state;
 
     public MatchRoom(
             String name,
@@ -25,7 +28,8 @@ public class MatchRoom {
             int maxCount,
             int minCount,
             long createdAt,
-            List<String> joiners
+            List<String> joiners,
+            GameState state
     ) {
         this.name = name;
         this.owner = owner;
@@ -37,6 +41,7 @@ public class MatchRoom {
         this.minCount = minCount;
         this.createdAt = createdAt;
         this.joiners = joiners;
+        this.state = state;
     }
 
     public String getName() {
@@ -59,6 +64,14 @@ public class MatchRoom {
         return createdAt;
     }
 
+    public GameState getState() {
+        return state;
+    }
+
+    public void setState(GameState state) {
+        this.state = state;
+    }
+
     public List<String> getJoiners() {
         return joiners;
     }
@@ -78,4 +91,6 @@ public class MatchRoom {
     public int getId() {
         return id;
     }
+
+
 }

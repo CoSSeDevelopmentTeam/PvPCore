@@ -29,9 +29,15 @@ public class GameManager {
                 state = GameState.STATE_FIGHTING;
 
                 state = GameState.STATE_FINISHED;
+
             } catch (Exception e) {
                 e.printStackTrace();
+                state = GameState.STATE_FINISHED;
+
                 room.getJoiners().forEach(name -> server.getPlayer(name).sendTitle("§aシステム§r>>§cPvP中にエラーが発生したため中断しました。"));
+                //TODO 初期位置に戻す
+
+                state = GameState.STATE_WAITING;
             }
         });
         mainThread.setName("GameThread/" + room.getId());

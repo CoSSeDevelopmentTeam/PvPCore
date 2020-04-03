@@ -4,6 +4,7 @@ import dev.itsu.pvpcore.exception.InvalidPlayersCountException;
 import dev.itsu.pvpcore.exception.PlayerAlreadyEntryException;
 import dev.itsu.pvpcore.exception.RoomNotFoundException;
 import dev.itsu.pvpcore.game.GameManager;
+import dev.itsu.pvpcore.game.GameState;
 import dev.itsu.pvpcore.model.MatchRoom;
 
 import java.util.*;
@@ -47,23 +48,25 @@ public class PVPCoreAPI {
         return entrying.get(playerName) != null;
     }
 
-    public void createRoom(String owner, String name, String description, int maxCount, int minCount, boolean privateRoom, int arenaId) {
+    public int createRoom(String owner, String name, String description, int maxCount, int minCount, boolean privateRoom, int arenaId) {
         if (minCount < 2 || minCount > maxCount) throw new InvalidPlayersCountException();
 
         MatchRoom room = new MatchRoom(
                 name,
                 owner,
                 description,
-                new Random().nextInt(1000),
+                new Random().nextInt(8999) + 1000,
                 arenaId,
                 privateRoom,
                 maxCount,
                 minCount,
                 System.currentTimeMillis(),
-                new ArrayList<>()
+                new ArrayList<>(),
+                GameState.STATE_WAITING
         );
 
         rooms.put(room.getId(), room);
+        return room.getId();
     }
 
     public void removeRoom(int id) {
@@ -90,7 +93,6 @@ public class PVPCoreAPI {
             });
         });
 
-        removeRoom(room.getId());
         new GameManager(room).start();
     }
 
