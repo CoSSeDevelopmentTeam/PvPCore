@@ -1,5 +1,6 @@
 package dev.itsu.pvpcore.api;
 
+import dev.itsu.pvpcore.exception.ArenaNotFoundException;
 import dev.itsu.pvpcore.exception.InvalidPlayersCountException;
 import dev.itsu.pvpcore.exception.RoomNotFoundException;
 import dev.itsu.pvpcore.game.GameManager;
@@ -8,12 +9,14 @@ import dev.itsu.pvpcore.model.MatchRoom;
 
 import java.util.*;
 
-public class PVPCoreAPI {
+public class RoomManagementAPI {
+
+    private static RoomManagementAPI instance = new RoomManagementAPI();
 
     private final Map<Integer, MatchRoom> rooms;
     private final Map<String, Integer> entrying;
 
-    private PVPCoreAPI() {
+    private RoomManagementAPI() {
         rooms = new HashMap<>();
         entrying = new HashMap<>();
     }
@@ -61,6 +64,8 @@ public class PVPCoreAPI {
 
     public int createRoom(String owner, String name, String description, int maxCount, int minCount, boolean privateRoom, int arenaId) {
         if (minCount < 2 || maxCount < 2 || minCount > maxCount) throw new InvalidPlayersCountException();
+
+        if (ArenaManagementAPI.getInstance().getArenaById(arenaId) == null) throw new ArenaNotFoundException();
 
         // すでに所有しているルームは削除する
         MatchRoom r = getRoomByOwner(owner);
@@ -124,10 +129,8 @@ public class PVPCoreAPI {
         return new ArrayList<>(rooms.values());
     }
 
-    public static class Factory {
-        private static PVPCoreAPI instance = new PVPCoreAPI();
-        public static PVPCoreAPI getInstance() {
-            return instance;
-        }
+    public static RoomManagementAPI getInstance() {
+        return instance;
     }
+
 }
