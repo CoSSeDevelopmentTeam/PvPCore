@@ -19,7 +19,7 @@ public class ArenaDBRepository implements IRepository {
     public boolean create(String name, String owner, String description, String world, int x, int y, int z) {
         if (exists(name)) return false;
         try {
-            String sql = "INSERT INTO arena(name, owner, description, world, x, y, z) VALUES (?, ?, ?, ?, ?, ?, ?);";
+            String sql = "INSERT INTO arena (name, owner, description, world, x, y, z, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(50);
             statement.setString(1, name);
@@ -29,6 +29,7 @@ public class ArenaDBRepository implements IRepository {
             statement.setInt(5, x);
             statement.setInt(6, y);
             statement.setInt(7, z);
+            statement.setInt(8, SQLBoolean.toInt(true));
             statement.executeUpdate();
             statement.close();
             return true;
@@ -57,7 +58,7 @@ public class ArenaDBRepository implements IRepository {
     public boolean update(Arena arena) {
         if (!exists(arena.getName())) return false;
         try {
-            String sql = "UPDATE arena SET name = ?, description = ?, world = ?, x = ?, y = ?, z = ? WHERE id = ?;";
+            String sql = "UPDATE arena SET name = ?, description = ?, world = ?, x = ?, y = ?, z = ?, status = ? WHERE id = ?;";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(50);
             statement.setString(1, arena.getName());
@@ -67,6 +68,7 @@ public class ArenaDBRepository implements IRepository {
             statement.setInt(5, arena.getY());
             statement.setInt(6, arena.getZ());
             statement.setInt(7, arena.getId());
+            statement.setInt(8, arena.getStatus().toInt());
             statement.executeUpdate();
             statement.close();
             return true;
@@ -96,7 +98,78 @@ public class ArenaDBRepository implements IRepository {
                                 resultSet.getString("world"),
                                 resultSet.getInt("x"),
                                 resultSet.getInt("y"),
-                                resultSet.getInt("z")
+                                resultSet.getInt("z"),
+                                Arena.Status.fromInt(resultSet.getInt("status"))
+                        )
+                );
+            }
+            resultSet.close();
+            System.out.println(result.size());
+            return result;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
+
+    public List<Arena> getArenasByOwner(String owner) {
+        try {
+            String sql = "SELECT * FROM arena WHERE owner = ?;";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setQueryTimeout(100);
+            statement.setString(1, owner);
+
+            ResultSet resultSet = statement.executeQuery();
+            List<Arena> result = new ArrayList<>();
+            statement.close();
+
+            while (resultSet.next()) {
+                result.add(
+                        new Arena(
+                                resultSet.getInt("id"),
+                                resultSet.getString("name"),
+                                resultSet.getString("owner"),
+                                resultSet.getString("description"),
+                                resultSet.getString("world"),
+                                resultSet.getInt("x"),
+                                resultSet.getInt("y"),
+                                resultSet.getInt("z"),
+                                Arena.Status.fromInt(resultSet.getInt("status"))
+                        )
+                );
+            }
+            resultSet.close();
+            return result;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
+
+    public List<Arena> getNotUsedArenas() {
+        try {
+            String sql = "SELECT * FROM arena WHERE status = ? AND status = ?;";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setQueryTimeout(100);
+            statement.setInt(1, Arena.Status.AVAILABLE.toInt());
+            statement.setInt(2, Arena.Status.RESERVED.toInt());
+
+            ResultSet resultSet = statement.executeQuery();
+            List<Arena> result = new ArrayList<>();
+            statement.close();
+
+            while (resultSet.next()) {
+                result.add(
+                        new Arena(
+                                resultSet.getInt("id"),
+                                resultSet.getString("name"),
+                                resultSet.getString("owner"),
+                                resultSet.getString("description"),
+                                resultSet.getString("world"),
+                                resultSet.getInt("x"),
+                                resultSet.getInt("y"),
+                                resultSet.getInt("z"),
+                                Arena.Status.fromInt(resultSet.getInt("status"))
                         )
                 );
             }
@@ -128,7 +201,8 @@ public class ArenaDBRepository implements IRepository {
                         resultSet.getString("world"),
                         resultSet.getInt("x"),
                         resultSet.getInt("y"),
-                        resultSet.getInt("z")
+                        resultSet.getInt("z"),
+                        Arena.Status.fromInt(resultSet.getInt("status"))
                 );
             }
             resultSet.close();
@@ -158,7 +232,8 @@ public class ArenaDBRepository implements IRepository {
                         resultSet.getString("world"),
                         resultSet.getInt("x"),
                         resultSet.getInt("y"),
-                        resultSet.getInt("z")
+                        resultSet.getInt("z"),
+                        Arena.Status.fromInt(resultSet.getInt("status"))
                 );
             }
             resultSet.close();
@@ -170,7 +245,7 @@ public class ArenaDBRepository implements IRepository {
 
     public boolean exists(String name) {
         try {
-            String sql = "SELECT arena WHERE name = ?";
+            String sql = "SELECT * FROM arena WHERE name = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(50);
             statement.setString(1, name);
@@ -202,7 +277,9 @@ public class ArenaDBRepository implements IRepository {
                             "world TEXT NOT NULL, " +
                             "x INTEGER NOT NULL," +
                             "y INTEGER NOT NULL," +
-                            "z INTEGER NOT NULL )"
+                            "z INTEGER NOT NULL," +
+                            "status INTEGER NOT NULL" +
+                            ");"
             );
             statement.close();
 
@@ -217,6 +294,16 @@ public class ArenaDBRepository implements IRepository {
             connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+    
+    private static class SQLBoolean {        
+        public static int toInt(boolean b) {
+            return b ? 0 : 1;
+        }
+        
+        public static boolean toBoolean(int i) {
+            return i == 0;
         }
     }
 }

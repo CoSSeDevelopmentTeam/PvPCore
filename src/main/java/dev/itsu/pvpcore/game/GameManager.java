@@ -5,6 +5,7 @@ import cn.nukkit.Server;
 import cn.nukkit.level.Position;
 import cn.nukkit.utils.TextFormat;
 import dev.itsu.pvpcore.api.ArenaManagementAPI;
+import dev.itsu.pvpcore.api.RoomManagementAPI;
 import dev.itsu.pvpcore.exception.RoomNotFoundException;
 import dev.itsu.pvpcore.model.Arena;
 import dev.itsu.pvpcore.model.MatchRoom;
@@ -37,12 +38,8 @@ public class GameManager {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                state = GameState.STATE_FINISHED;
-
-                room.getJoiners().forEach(name -> Server.getInstance().getPlayer(name).sendTitle("§aシステム§r>>§cPvP中にエラーが発生したため中断しました。"));
-                //TODO 初期位置に戻す
-
-                state = GameState.STATE_WAITING;
+                sendMessageToJoiners("§aシステム§r>>§cPvP中にエラーが発生したため中断しました。");
+                finish();
             }
         });
         mainThread.setName("GameThread/" + room.getId());
@@ -52,9 +49,14 @@ public class GameManager {
     private void finish() {
         state = GameState.STATE_FINISHED;
         sendTitleToJoiners("§cゲーム終了");
+
         // TODO 順位・経験値の計算
+        // TODO 初期位置に戻す
 
         GameListener.getInstance().removeGameManager(this);
+        ArenaManagementAPI.getInstance().updateStatus(room.getArenaId(), Arena.Status.AVAILABLE);
+
+        state = GameState.STATE_WAITING;
     }
 
     public GameState getState() {
@@ -71,8 +73,8 @@ public class GameManager {
 
         room.getJoiners().forEach(name -> {
             Player player = Server.getInstance().getPlayer(name);
-            int xRand = (int) Math.round(5 * Math.random());
-            int zRand = (int) Math.round(5 * Math.random());
+            double xRand = 5 * Math.random();
+            double zRand = 5 * Math.random();
             player.teleport(new Position(arena.getX() + xRand, arena.getY(), arena.getZ() + zRand, Server.getInstance().getLevelByName(arena.getWorld())));
         });
     }

@@ -1,10 +1,12 @@
 package dev.itsu.pvpcore.api;
 
 import dev.itsu.pvpcore.exception.ArenaNotFoundException;
+import dev.itsu.pvpcore.exception.ArenaUnavailableException;
 import dev.itsu.pvpcore.exception.InvalidPlayersCountException;
 import dev.itsu.pvpcore.exception.RoomNotFoundException;
 import dev.itsu.pvpcore.game.GameManager;
 import dev.itsu.pvpcore.game.GameState;
+import dev.itsu.pvpcore.model.Arena;
 import dev.itsu.pvpcore.model.MatchRoom;
 
 import java.util.*;
@@ -65,7 +67,9 @@ public class RoomManagementAPI {
     public int createRoom(String owner, String name, String description, int maxCount, int minCount, boolean privateRoom, int arenaId) {
         if (minCount < 2 || maxCount < 2 || minCount > maxCount) throw new InvalidPlayersCountException();
 
-        if (ArenaManagementAPI.getInstance().getArenaById(arenaId) == null) throw new ArenaNotFoundException();
+        Arena arena = ArenaManagementAPI.getInstance().getArenaById(arenaId);
+        if (arena == null) throw new ArenaNotFoundException();
+        else if (arena.getStatus() == Arena.Status.USED) throw new ArenaUnavailableException();
 
         // すでに所有しているルームは削除する
         MatchRoom r = getRoomByOwner(owner);
@@ -88,6 +92,7 @@ public class RoomManagementAPI {
                 GameState.STATE_WAITING
         );
 
+        ArenaManagementAPI.getInstance().updateStatus(room.getArenaId(), Arena.Status.RESERVED);
         rooms.put(room.getId(), room);
 
         // 自分のルームにエントリーする
@@ -100,6 +105,7 @@ public class RoomManagementAPI {
         MatchRoom room = getRoomById(id);
         room.getJoiners().forEach(name -> cancelEntry(room.getId(), name));
         rooms.remove(id);
+        ArenaManagementAPI.getInstance().updateStatus(room.getArenaId(), Arena.Status.AVAILABLE);
     }
 
     public boolean checkCanStart(int id) {
@@ -111,7 +117,9 @@ public class RoomManagementAPI {
     }
 
     public void startGame(int id) {
-        new GameManager(getRoomById(id)).start();
+        MatchRoom room = getRoomById(id);
+        ArenaManagementAPI.getInstance().updateStatus(room.getArenaId(), Arena.Status.USED);
+        new GameManager(room).start();
     }
 
     public MatchRoom getRoomById(int id) {

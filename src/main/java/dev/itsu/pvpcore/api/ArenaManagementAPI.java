@@ -44,7 +44,8 @@ public class ArenaManagementAPI {
                 arena.getWorld(),
                 arena.getX(),
                 arena.getY(),
-                arena.getZ()
+                arena.getZ(),
+                arena.getStatus()
         ));
     }
 
@@ -62,7 +63,8 @@ public class ArenaManagementAPI {
                 arena.getWorld(),
                 arena.getX(),
                 arena.getY(),
-                arena.getZ()
+                arena.getZ(),
+                arena.getStatus()
         ));
     }
 
@@ -78,7 +80,26 @@ public class ArenaManagementAPI {
                         location.level.getName(),
                         location.getFloorX(),
                         location.getFloorY(),
-                        location.getFloorZ()
+                        location.getFloorZ(),
+                        arena.getStatus()
+                )
+        );
+    }
+
+    public boolean updateStatus(int id, Arena.Status status) {
+        Arena arena = getArenaById(id);
+        if (arena == null) return false;
+        return repository.update(
+                new Arena(
+                        arena.getId(),
+                        arena.getName(),
+                        arena.getOwner(),
+                        arena.getDescription(),
+                        arena.getName(),
+                        arena.getX(),
+                        arena.getY(),
+                        arena.getZ(),
+                        status
                 )
         );
     }
@@ -93,6 +114,14 @@ public class ArenaManagementAPI {
 
     public List<Arena> getArenas() {
         return repository.getArenas();
+    }
+
+    public List<Arena> getArenasByOwner(String owner) {
+        return repository.getArenasByOwner(owner);
+    }
+
+    public List<Arena> getNotUsedArenas() {
+        return repository.getNotUsedArenas();
     }
 
     public static ArenaManagementAPI getInstance() {
