@@ -19,7 +19,7 @@ public class ArenaDBRepository implements IRepository {
     public boolean create(String name, String owner, String description, String world, int x, int y, int z) {
         if (exists(name)) return false;
         try {
-            String sql = "INSERT INTO arena (name, owner, description, world, x, y, z, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+            String sql = "INSERT INTO arena (name, owner, description, world, x, y, z, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(50);
             statement.setString(1, name);
@@ -42,7 +42,7 @@ public class ArenaDBRepository implements IRepository {
     public boolean delete(int id) {
         if (getArenaById(id) == null) return false;
         try {
-            String sql = "DELETE FROM arena WHERE id = ?;";
+            String sql = "DELETE FROM arena WHERE id = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(50);
             statement.setInt(1, id);
@@ -58,7 +58,7 @@ public class ArenaDBRepository implements IRepository {
     public boolean update(Arena arena) {
         if (!exists(arena.getName())) return false;
         try {
-            String sql = "UPDATE arena SET name = ?, description = ?, world = ?, x = ?, y = ?, z = ?, status = ? WHERE id = ?;";
+            String sql = "UPDATE arena SET name = ?, description = ?, world = ?, x = ?, y = ?, z = ?, status = ? WHERE id = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(50);
             statement.setString(1, arena.getName());
@@ -78,15 +78,29 @@ public class ArenaDBRepository implements IRepository {
         return false;
     }
 
+    private boolean updateAllStatus(Arena.Status status) {
+        try {
+            String sql = "UPDATE arena SET status = ?";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setQueryTimeout(50);
+            statement.setInt(1, status.toInt());
+            statement.executeUpdate();
+            statement.close();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public List<Arena> getArenas() {
         try {
-            String sql = "SELECT * FROM arena;";
+            String sql = "SELECT * FROM arena";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(100);
 
             ResultSet resultSet = statement.executeQuery();
             List<Arena> result = new ArrayList<>();
-            statement.close();
 
             while (resultSet.next()) {
                 result.add(
@@ -104,6 +118,7 @@ public class ArenaDBRepository implements IRepository {
                 );
             }
             resultSet.close();
+            statement.close();
             System.out.println(result.size());
             return result;
         } catch (SQLException e) {
@@ -114,14 +129,13 @@ public class ArenaDBRepository implements IRepository {
 
     public List<Arena> getArenasByOwner(String owner) {
         try {
-            String sql = "SELECT * FROM arena WHERE owner = ?;";
+            String sql = "SELECT * FROM arena WHERE owner = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(100);
             statement.setString(1, owner);
 
             ResultSet resultSet = statement.executeQuery();
             List<Arena> result = new ArrayList<>();
-            statement.close();
 
             while (resultSet.next()) {
                 result.add(
@@ -139,6 +153,7 @@ public class ArenaDBRepository implements IRepository {
                 );
             }
             resultSet.close();
+            statement.close();
             return result;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -148,7 +163,7 @@ public class ArenaDBRepository implements IRepository {
 
     public List<Arena> getNotUsedArenas() {
         try {
-            String sql = "SELECT * FROM arena WHERE status = ? AND status = ?;";
+            String sql = "SELECT * FROM arena WHERE status = ? OR status = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(100);
             statement.setInt(1, Arena.Status.AVAILABLE.toInt());
@@ -156,7 +171,6 @@ public class ArenaDBRepository implements IRepository {
 
             ResultSet resultSet = statement.executeQuery();
             List<Arena> result = new ArrayList<>();
-            statement.close();
 
             while (resultSet.next()) {
                 result.add(
@@ -174,6 +188,7 @@ public class ArenaDBRepository implements IRepository {
                 );
             }
             resultSet.close();
+            statement.close();
             return result;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -184,13 +199,12 @@ public class ArenaDBRepository implements IRepository {
     public Arena getArenaById(int id) {
         Arena arena = null;
         try {
-            String sql = "SELECT * FROM arena WHERE id = ?;";
+            String sql = "SELECT * FROM arena WHERE id = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(50);
             statement.setInt(1, id);
 
             ResultSet resultSet = statement.executeQuery();
-            statement.close();
 
             if (resultSet.next()) {
                 arena = new Arena(
@@ -206,6 +220,7 @@ public class ArenaDBRepository implements IRepository {
                 );
             }
             resultSet.close();
+            statement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -215,13 +230,12 @@ public class ArenaDBRepository implements IRepository {
     public Arena getArenaByName(String name) {
         Arena arena = null;
         try {
-            String sql = "SELECT * FROM arena WHERE name = ?;";
+            String sql = "SELECT * FROM arena WHERE name = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setQueryTimeout(50);
             statement.setString(1, name);
 
             ResultSet resultSet = statement.executeQuery();
-            statement.close();
 
             if (resultSet.next()) {
                 arena = new Arena(
@@ -237,6 +251,7 @@ public class ArenaDBRepository implements IRepository {
                 );
             }
             resultSet.close();
+            statement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -279,7 +294,7 @@ public class ArenaDBRepository implements IRepository {
                             "y INTEGER NOT NULL," +
                             "z INTEGER NOT NULL," +
                             "status INTEGER NOT NULL" +
-                            ");"
+                            ")"
             );
             statement.close();
 
@@ -291,6 +306,7 @@ public class ArenaDBRepository implements IRepository {
     @Override
     public void disConnect() {
         try {
+            updateAllStatus(Arena.Status.AVAILABLE);
             connection.close();
         } catch (SQLException e) {
             e.printStackTrace();

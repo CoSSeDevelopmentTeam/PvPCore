@@ -14,6 +14,10 @@ public class EventListener implements Listener {
         Player player = event.getPlayer();
         RoomManagementAPI api = RoomManagementAPI.getInstance();
 
+        if (api.getRoomByOwner(player.getName()) != null) {
+            api.removeRoom(api.getRoomByOwner(player.getName()).getId());
+        }
+
         if (api.isEntrying(player.getName())) {
             api.cancelEntry(api.getEntryingRoom(player.getName()).getId(), player.getName());
         }

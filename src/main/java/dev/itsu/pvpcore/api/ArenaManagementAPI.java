@@ -124,6 +124,9 @@ public class ArenaManagementAPI {
         return repository.getNotUsedArenas();
     }
 
+    public void disconnect() {
+        repository.disConnect();
+    }
     public static ArenaManagementAPI getInstance() {
         return instance;
     }

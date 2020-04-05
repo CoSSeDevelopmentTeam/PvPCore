@@ -55,8 +55,7 @@ public class GameManager {
 
         GameListener.getInstance().removeGameManager(this);
         ArenaManagementAPI.getInstance().updateStatus(room.getArenaId(), Arena.Status.AVAILABLE);
-
-        state = GameState.STATE_WAITING;
+        RoomManagementAPI.getInstance().removeRoom(room.getId());
     }
 
     public GameState getState() {
@@ -115,7 +114,7 @@ public class GameManager {
     public void onDeath(Player player) {
         result.addFirst(player.getName());
         sendMessageToJoiners("§dPVPシステム§f>>プレイヤー: " + player.getName() + "が§c死亡§rしました。");
-        if (result.size() == room.getJoiners().size()) finish();
+        if (result.size() == room.getJoiners().size() - 1) finish();
     }
 
     public void onLeave(Player player) {
@@ -125,6 +124,6 @@ public class GameManager {
         sendMessageToJoiners("§dPVPシステム§f>>プレイヤー: " + player.getName() + "が§e退出§eしました。");
         // TODO プレイヤーの経験値を引く
 
-        if (result.size() == room.getJoiners().size()) finish();
+        if (result.size() == room.getJoiners().size() - 1) finish();
     }
 }

@@ -47,9 +47,6 @@ public class RoomManagementAPI {
         MatchRoom room = rooms.get(id);
         if (room == null) throw new RoomNotFoundException();
 
-        // 自分のルームからは退出不可
-        if (room.getOwner().equals(playerName)) throw new IllegalStateException("Room owner cannot leave their own room.");
-
         // エントリーしている人をキャンセル
         room.getJoiners().remove(playerName);
 
@@ -116,6 +113,7 @@ public class RoomManagementAPI {
         return false;
     }
 
+    // ゲーム開始
     public void startGame(int id) {
         MatchRoom room = getRoomById(id);
         ArenaManagementAPI.getInstance().updateStatus(room.getArenaId(), Arena.Status.USED);
