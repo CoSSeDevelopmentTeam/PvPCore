@@ -5,6 +5,8 @@ import dev.itsu.pvpcore.api.ArenaManagementAPI;
 import dev.itsu.pvpcore.game.EventListener;
 import dev.itsu.pvpcore.game.GameListener;
 
+import java.io.File;
+
 public class Main extends PluginBase {
 
     private static Main instance;
@@ -14,6 +16,7 @@ public class Main extends PluginBase {
         instance = this;
         getServer().getPluginManager().registerEvents(new EventListener(), this);
         getServer().getPluginManager().registerEvents(GameListener.getInstance(), this);
+        new File("./plugins/PVPCore").mkdirs();
         getLogger().info("Enabled.");
     }
 
