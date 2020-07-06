@@ -64,7 +64,7 @@ public class GameManager {
                 PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + maxExp);
                 PlayerManagementAPI.getInstance().updateWinCount(status.getName());
             } else {
-                PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + i * 10 / maxExp);
+                PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + i / maxExp);
             }
         }
         // TODO 初期位置に戻す
