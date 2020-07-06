@@ -1,7 +1,5 @@
 package dev.itsu.pvpcore.model;
 
-import dev.itsu.pvpcore.api.repository.IRepository;
-
 public class PlayerStatus {
 
     private String name; // 名前
