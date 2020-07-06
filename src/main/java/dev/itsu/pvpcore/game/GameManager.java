@@ -60,11 +60,11 @@ public class GameManager {
         int maxExp = getRoom().getMaxCount() * 100;
         for (int i = 0; i < result.size(); i++) {
             PlayerStatus status = PlayerManagementAPI.getInstance().getPlayerStatus(result.get(i));
-            if (i == 1) {
+            if (i == 0) {
                 PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + maxExp);
                 PlayerManagementAPI.getInstance().updateWinCount(status.getName());
             } else {
-                PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + i / maxExp);
+                PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + maxExp / i);
             }
         }
         // TODO 初期位置に戻す
