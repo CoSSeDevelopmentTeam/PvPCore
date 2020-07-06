@@ -37,7 +37,7 @@ public class GameListener implements Listener {
     private void onQuit(PlayerQuitEvent event) {
         GameManager manager = getGameManagerByPlayer(event.getPlayer());
         if (manager == null) return;
-        manager.onLeave(event.getPlayer());
+        manager.onLeave(event.getPlayer(), event.getReason());
     }
 
     private GameManager getGameManagerByPlayer(Player player) {

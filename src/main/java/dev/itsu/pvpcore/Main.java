@@ -2,6 +2,7 @@ package dev.itsu.pvpcore;
 
 import cn.nukkit.plugin.PluginBase;
 import dev.itsu.pvpcore.api.ArenaManagementAPI;
+import dev.itsu.pvpcore.api.PlayerManagementAPI;
 import dev.itsu.pvpcore.game.EventListener;
 import dev.itsu.pvpcore.game.GameListener;
 
@@ -23,6 +24,7 @@ public class Main extends PluginBase {
     @Override
     public void onDisable() {
         ArenaManagementAPI.getInstance().disconnect();
+        PlayerManagementAPI.getInstance().disconnect();
     }
 
     public static Main getInstance() {
