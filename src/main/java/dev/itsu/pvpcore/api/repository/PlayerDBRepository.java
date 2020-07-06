@@ -8,7 +8,7 @@ public class PlayerDBRepository implements IRepository {
 
     private Connection connection;
 
-    protected PlayerDBRepository() {
+    public PlayerDBRepository() {
         connect();
     }
 
