@@ -67,10 +67,15 @@ public class GameManager {
                 PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + maxExp / i);
             }
         }
-        // TODO 初期位置に戻す
+        // TODO レベル計算処理+初期位置に戻す
         result.forEach(name -> {
-            Player player = Server.getInstance().getPlayer(name);
-            player.teleport(Server.getInstance().getDefaultLevel().getSpawnLocation(), PlayerTeleportEvent.TeleportCause.PLUGIN);
+            PlayerStatus currentStatus = PlayerManagementAPI.getInstance().getPlayerStatus(name);
+            if (getRequiredExp(currentStatus.getLevel() + 1) <= currentStatus.getExperienceLevel()) {
+                PlayerManagementAPI.getInstance().updateLevel(name);
+
+                Player player = Server.getInstance().getPlayer(name);
+                player.teleport(Server.getInstance().getDefaultLevel().getSpawnLocation(), PlayerTeleportEvent.TeleportCause.PLUGIN);
+            }
         });
 
         GameListener.getInstance().removeGameManager(this);
@@ -154,6 +159,15 @@ public class GameManager {
             );
         }
         preFinish();
+    }
+
+    private int getRequiredExp(int nextLevel) {
+        int result = 1000;
+        if (nextLevel == 1) return result;
+        for (int i = 0; i < nextLevel; i++) {
+            result *= 1.8;
+        }
+        return result;
     }
 
     private void preFinish() {
