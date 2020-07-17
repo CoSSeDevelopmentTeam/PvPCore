@@ -2,13 +2,17 @@ package dev.itsu.pvpcore.game;
 
 import cn.nukkit.Player;
 import cn.nukkit.Server;
+import cn.nukkit.event.player.PlayerTeleportEvent;
+import cn.nukkit.lang.BaseLang;
 import cn.nukkit.level.Position;
 import cn.nukkit.utils.TextFormat;
 import dev.itsu.pvpcore.api.ArenaManagementAPI;
+import dev.itsu.pvpcore.api.PlayerManagementAPI;
 import dev.itsu.pvpcore.api.RoomManagementAPI;
 import dev.itsu.pvpcore.exception.RoomNotFoundException;
 import dev.itsu.pvpcore.model.Arena;
 import dev.itsu.pvpcore.model.MatchRoom;
+import dev.itsu.pvpcore.model.PlayerStatus;
 
 import java.util.LinkedList;
 
@@ -17,10 +21,12 @@ public class GameManager {
     private GameState state;
     private MatchRoom room;
     private LinkedList<String> result;
+    private LinkedList<String> alivePlayers;
 
     public GameManager(MatchRoom room) {
         this.room = room;
         result = new LinkedList<>();
+        alivePlayers = (LinkedList<String>) room.getJoiners();
     }
 
     public void start() {
@@ -50,8 +56,26 @@ public class GameManager {
         state = GameState.STATE_FINISHED;
         sendTitleToJoiners("§cゲーム終了");
 
-        // TODO 順位・経験値の計算
-        // TODO 初期位置に戻す
+        int maxExp = getRoom().getMaxCount() * 100;
+        for (int i = 0; i < result.size(); i++) {
+            PlayerStatus status = PlayerManagementAPI.getInstance().getPlayerStatus(result.get(i));
+            if (i == 0) {
+                PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + maxExp);
+                PlayerManagementAPI.getInstance().updateWinCount(status.getName());
+            } else {
+                PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + maxExp / i);
+            }
+        }
+
+        result.forEach(name -> {
+            PlayerStatus currentStatus = PlayerManagementAPI.getInstance().getPlayerStatus(name);
+            if (getRequiredExp(currentStatus.getLevel() + 1) <= currentStatus.getExperienceLevel()) {
+                PlayerManagementAPI.getInstance().updateLevel(name);
+
+                Player player = Server.getInstance().getPlayer(name);
+                player.teleport(Server.getInstance().getDefaultLevel().getSpawnLocation(), PlayerTeleportEvent.TeleportCause.PLUGIN);
+            }
+        });
 
         GameListener.getInstance().removeGameManager(this);
         ArenaManagementAPI.getInstance().updateStatus(room.getArenaId(), Arena.Status.AVAILABLE);
@@ -113,17 +137,46 @@ public class GameManager {
 
     public void onDeath(Player player) {
         result.addFirst(player.getName());
+        alivePlayers.remove(player.getName());
         sendMessageToJoiners("§dPVPシステム§f>>プレイヤー: " + player.getName() + "が§c死亡§rしました。");
-        if (result.size() == room.getJoiners().size() - 1) finish();
+        player.sendMessage("§dPVPシステム§f>>ゲーム終了までお待ちください！");
+        preFinish();
     }
 
-    public void onLeave(Player player) {
+    public void onLeave(Player player, String reason) {
         result.remove(player.getName());
+        alivePlayers.remove(player.getName());
         room.getJoiners().remove(player.getName());
         GameListener.getInstance().removeFreezed(player.getName());
         sendMessageToJoiners("§dPVPシステム§f>>プレイヤー: " + player.getName() + "が§e退出§eしました。");
-        // TODO プレイヤーの経験値を引く
 
-        if (result.size() == room.getJoiners().size() - 1) finish();
+        if (reason.equals(new BaseLang(BaseLang.FALLBACK_LANGUAGE).translateString("disconnectionScreen.noReason"))) {
+            PlayerStatus status = PlayerManagementAPI.getInstance().getPlayerStatus(player.getName());
+            PlayerManagementAPI.getInstance().setPlayerExp(
+                    status.getName(),
+                    Math.max(status.getExperienceLevel() - 200, 0)
+            );
+        }
+        preFinish();
+    }
+
+    private int getRequiredExp(int nextLevel) {
+        int result = 1000;
+        if (nextLevel == 1) return result;
+        for (int i = 0; i < nextLevel; i++) {
+            result *= 1.8;
+        }
+        return result;
+    }
+
+    private void preFinish() {
+        if (isEndOfGame()) {
+            result.addFirst(alivePlayers.get(0));
+            finish();
+        }
+    }
+
+    private boolean isEndOfGame() {
+        return result.size() == room.getJoiners().size() - 1;
     }
 }
