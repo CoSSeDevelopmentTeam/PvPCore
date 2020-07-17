@@ -56,7 +56,6 @@ public class GameManager {
         state = GameState.STATE_FINISHED;
         sendTitleToJoiners("§cゲーム終了");
 
-        // TODO 順位・経験値の計算
         int maxExp = getRoom().getMaxCount() * 100;
         for (int i = 0; i < result.size(); i++) {
             PlayerStatus status = PlayerManagementAPI.getInstance().getPlayerStatus(result.get(i));
@@ -67,7 +66,7 @@ public class GameManager {
                 PlayerManagementAPI.getInstance().setPlayerExp(status.getName(), status.getExperienceLevel() + maxExp / i);
             }
         }
-        // TODO レベル計算処理+初期位置に戻す
+
         result.forEach(name -> {
             PlayerStatus currentStatus = PlayerManagementAPI.getInstance().getPlayerStatus(name);
             if (getRequiredExp(currentStatus.getLevel() + 1) <= currentStatus.getExperienceLevel()) {
@@ -150,7 +149,7 @@ public class GameManager {
         room.getJoiners().remove(player.getName());
         GameListener.getInstance().removeFreezed(player.getName());
         sendMessageToJoiners("§dPVPシステム§f>>プレイヤー: " + player.getName() + "が§e退出§eしました。");
-        // TODO プレイヤーの経験値を引く
+
         if (reason.equals(new BaseLang(BaseLang.FALLBACK_LANGUAGE).translateString("disconnectionScreen.noReason"))) {
             PlayerStatus status = PlayerManagementAPI.getInstance().getPlayerStatus(player.getName());
             PlayerManagementAPI.getInstance().setPlayerExp(
