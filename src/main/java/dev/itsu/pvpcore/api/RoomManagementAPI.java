@@ -37,8 +37,7 @@ public class RoomManagementAPI {
         }
 
         // プレイヤーデータが存在しなければ作成、マッチ数追加
-        PlayerManagementAPI.getInstance().createPlayerStatus(playerName, 0, 0, 0, 0);
-        PlayerManagementAPI.getInstance().updateMatchCount(playerName, 1);
+        PlayerManagementAPI.getInstance().createPlayerStatus(playerName, 0, 0, 1, 0);
 
         room.getJoiners().add(playerName);
         entrying.put(playerName, id);
